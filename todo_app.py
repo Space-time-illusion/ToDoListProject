@@ -7,8 +7,9 @@ def init_db():
     conn = sqlite3.connect('todo.db')
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS tasks (
-                        id INTEGER PRIMARY KEY,
-                        task TEXT NOT NULL
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        task TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'Pending'
                     )''')
     conn.commit()
     conn.close()
@@ -26,6 +27,25 @@ def add_task():
         load_tasks()
     else:
         messagebox.showwarning("Input Error", "Task cannot be empty!")
+
+# 更新任务
+def update_task():
+    task = task_entry.get()
+    try:
+        task_id = task_listbox.get(task_listbox.curselection())[0]
+        new_task = task_entry.get()
+        if new_task != "":
+            conn = sqlite3.connect('todo.db')
+            cursor = conn.cursor()
+            cursor.execute('UPDATE tasks SET task = ? WHERE id = ?', (new_task, task_id))
+            conn.commit()
+            conn.close()
+            task_entry.delete(0, tk.END)
+            load_tasks()
+        else:
+            messagebox.showwarning("Input Error", "Task cannot be empty!")
+    except IndexError:
+        messagebox.showwarning("Selection Error", "Please select a task to update.")
 
 # 删除任务
 def delete_task():
@@ -48,7 +68,7 @@ def load_tasks():
     cursor.execute('SELECT * FROM tasks')
     tasks = cursor.fetchall()
     for task in tasks:
-        task_listbox.insert(tk.END, (task[0], task[1]))  # task[0]是ID，task[1]是任务内容
+        task_listbox.insert(tk.END, (task[0], task[1], task[2]))  # task[0]是ID，task[1]是任务内容，task[2]是任务状态
     conn.close()
 
 # 设置GUI
@@ -70,6 +90,10 @@ task_listbox.pack(pady=10)
 # 删除任务按钮
 delete_button = tk.Button(root, text="Delete Task", width=40, command=delete_task)
 delete_button.pack(pady=10)
+
+# 更新任务按钮
+update_button = tk.Button(root, text="Update Task", width=40, command=update_task)
+update_button.pack(pady=5)
 
 # 初始化数据库
 init_db()
